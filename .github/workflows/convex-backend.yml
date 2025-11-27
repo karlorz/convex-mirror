@@ -31,8 +31,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Install regctl
+        run: |
+          curl -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 -o regctl
+          chmod +x regctl
+          sudo mv regctl /usr/local/bin/
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -40,32 +43,28 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Mirror multi-platform image to Docker Hub
         run: |
           TARGET="${{ github.event.inputs.dockerhub_repo || env.DOCKERHUB_REPO }}:latest"
           echo "Mirroring: ${{ env.GHCR_SOURCE }}:latest → $TARGET"
-          docker buildx imagetools create --tag $TARGET ${{ env.GHCR_SOURCE }}:latest
+          regctl image copy ${{ env.GHCR_SOURCE }}:latest $TARGET
 
       - name: Verify push
         run: |
           TARGET="${{ github.event.inputs.dockerhub_repo || env.DOCKERHUB_REPO }}:latest"
           echo "✓ Successfully mirrored ${{ env.GHCR_SOURCE }}:latest → $TARGET"
-          docker buildx imagetools inspect $TARGET
+          regctl manifest get $TARGET --format raw-body --require-list | jq -r '.manifests[].platform | "\(.os)/\(.architecture)"'
 
   mirror-sha:
     runs-on: ubuntu-latest
     if: github.event.inputs.mirror_sha_tag != 'false' || github.event_name == 'schedule'
 
     steps:
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Install regctl
+        run: |
+          curl -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 -o regctl
+          chmod +x regctl
+          sudo mv regctl /usr/local/bin/
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -73,21 +72,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Mirror multi-platform image to Docker Hub
         run: |
           TARGET="${{ github.event.inputs.dockerhub_repo || env.DOCKERHUB_REPO }}:${{ env.SHA_TAG }}"
           echo "Mirroring: ${{ env.GHCR_SOURCE }}:${{ env.SHA_TAG }} → $TARGET"
-          docker buildx imagetools create --tag $TARGET ${{ env.GHCR_SOURCE }}:${{ env.SHA_TAG }}
+          regctl image copy ${{ env.GHCR_SOURCE }}:${{ env.SHA_TAG }} $TARGET
 
       - name: Verify push
         run: |
           TARGET="${{ github.event.inputs.dockerhub_repo || env.DOCKERHUB_REPO }}:${{ env.SHA_TAG }}"
           echo "✓ Successfully mirrored ${{ env.GHCR_SOURCE }}:${{ env.SHA_TAG }} → $TARGET"
-          docker buildx imagetools inspect $TARGET
+          regctl manifest get $TARGET --format raw-body --require-list | jq -r '.manifests[].platform | "\(.os)/\(.architecture)"'
