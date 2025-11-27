@@ -1,0 +1,62 @@
+name: Mirror GHCR Image to Docker Hub
+
+on:
+  # Run on manual trigger
+  workflow_dispatch:
+    inputs:
+      source_image:
+        description: 'Source image from GHCR (e.g., ghcr.io/owner/image:tag)'
+        required: true
+        default: 'ghcr.io/example/image:latest'
+      target_image:
+        description: 'Target image on Docker Hub (e.g., username/image:tag)'
+        required: true
+        default: 'dockerhub-user/image:latest'
+
+  # Optional: Run on a schedule (daily at 2 AM UTC)
+  # schedule:
+  #   - cron: '0 2 * * *'
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set image variables
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "source=${{ github.event.inputs.source_image }}" >> $GITHUB_OUTPUT
+            echo "target=${{ github.event.inputs.target_image }}" >> $GITHUB_OUTPUT
+          else
+            # Default images for scheduled runs
+            echo "source=ghcr.io/example/image:latest" >> $GITHUB_OUTPUT
+            echo "target=${{ secrets.DOCKERHUB_USERNAME }}/image:latest" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Pull image from GHCR
+        run: |
+          echo "Pulling image: ${{ steps.vars.outputs.source }}"
+          docker pull ${{ steps.vars.outputs.source }}
+
+      - name: Tag image for Docker Hub
+        run: |
+          echo "Tagging image as: ${{ steps.vars.outputs.target }}"
+          docker tag ${{ steps.vars.outputs.source }} ${{ steps.vars.outputs.target }}
+
+      - name: Push image to Docker Hub
+        run: |
+          echo "Pushing image: ${{ steps.vars.outputs.target }}"
+          docker push ${{ steps.vars.outputs.target }}
+
+      - name: Clean up
+        if: always()
+        run: |
+          docker rmi ${{ steps.vars.outputs.source }} || true
+          docker rmi ${{ steps.vars.outputs.target }} || true
