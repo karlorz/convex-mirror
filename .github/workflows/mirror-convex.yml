@@ -7,7 +7,7 @@ on:
       dockerhub_repo:
         description: 'Docker Hub repository (e.g., username/convex-backend)'
         required: true
-        default: 'karlorz/convex-mirror'
+        default: 'karl8080/convex-mirror'
       mirror_sha_tag:
         description: 'Also mirror SHA tag (6efab6f2b6c182b90255774d747328cfc7b80dd9)?'
         required: false
@@ -24,7 +24,7 @@ on:
 env:
   GHCR_SOURCE: ghcr.io/get-convex/convex-backend
   SHA_TAG: 6efab6f2b6c182b90255774d747328cfc7b80dd9
-  DOCKERHUB_REPO: karlorz/convex-mirror
+  DOCKERHUB_REPO: karl8080/convex-mirror
 
 jobs:
   mirror-latest:

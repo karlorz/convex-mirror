@@ -29,7 +29,7 @@ Uncomment the `schedule` section in `.github/workflows/mirror-image.yml` to run 
 
 ### 1. Mirror Convex Backend (Recommended)
 
-Pre-configured workflow for mirroring Convex backend images to `karlorz/convex-mirror`:
+Pre-configured workflow for mirroring Convex backend images to `karl8080/convex-mirror`:
 - **Latest tag**: `ghcr.io/get-convex/convex-backend:latest`
 - **SHA tag**: `ghcr.io/get-convex/convex-backend:6efab6f2b6c182b90255774d747328cfc7b80dd9`
 
@@ -37,7 +37,7 @@ Pre-configured workflow for mirroring Convex backend images to `karlorz/convex-m
 
 **Manual Trigger:**
 1. Go to Actions → Mirror Convex Backend → Run workflow
-2. Optionally change Docker Hub repository (default: `karlorz/convex-mirror`)
+2. Optionally change Docker Hub repository (default: `karl8080/convex-mirror`)
 3. Choose whether to mirror the SHA tag
 4. Click "Run workflow"
 
